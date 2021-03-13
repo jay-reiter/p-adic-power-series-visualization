@@ -45,24 +45,6 @@ ccred=$(shell echo -e "\033[0;31m")
 ccyellow=$(shell echo -e "\033[0;33m")
 ccend=$(shell echo -e "\033[0m")
 
-IS_EWS=$(shell hostname | grep "ews.illinois.edu")
-IS_CORRECT_CLANG=$(shell clang -v 2>&1 | grep "version 6")
-ifneq ($(strip $(IS_EWS)),)
-ifeq ($(strip $(IS_CORRECT_CLANG)),)
-CLANG_VERSION_MSG = $(error $(ccred) On EWS, please run 'module load llvm/6.0.1' first when running png_utils assignments. $(ccend))
-endif
-else
-CLANG_VERSION_MSG = $(warning $(ccyellow) Looks like you are not on EWS. Be sure to test on EWS before the deadline. $(ccend))
-endif
-
 output_msg: ; $(CLANG_VERSION_MSG)
 
-# Be sure to add output_msg as dependency target for your `dragon_fractal` binary
-
-# test: output_msg tests.o PNG.o HSLAPixel.o lodepng.o dragon_fractal.o
-# 	$(LD) tests.o PNG.o HSLAPixel.o lodepng.o dragon_fractal.o $(LDFLAGS) -o test
-
-# tests.o: tests/tests.cpp tests/catch.hpp png_utils/PNG.h png_utils/HSLAPixel.h
-# 	$(CXX) $(CXXFLAGS) tests/tests.cpp
-    
 .PHONY: output_msg
