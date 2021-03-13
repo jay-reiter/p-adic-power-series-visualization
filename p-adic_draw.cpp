@@ -106,7 +106,7 @@ png_utils::PNG p_adic_draw(int width, int height, int p, int children) {
     png_utils::PNG png(width, height);
     
     const int START_HUE = 200;
-    r = 0.6;
+    r = 0.5;
 
     //Set the background to a cool gradient
     for (unsigned int x = 0; x < png.width(); x++){
