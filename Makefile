@@ -4,9 +4,9 @@ EXENAME = image
 OBJS = main.o PNG.o HSLAPixel.o lodepng.o dragon_fractal.o p-adic_draw.o
 
 CXX = clang++
-CXXFLAGS = $(png_utils) -std=c++1y -stdlib=libc++ -c -g -O0 -Wall -Wextra -pedantic
+CXXFLAGS = $(png_utils) -std=c++1y -stdlib=libc++ -c -g -O0 -Wall -Wextra -pedantic -lpthread
 LD = clang++
-LDFLAGS = -std=c++1y -stdlib=libc++ -lc++abi -lm
+LDFLAGS = -std=c++1y -stdlib=libc++ -lc++abi -lm -lpthread
 
 
 all : $(EXENAME)

@@ -7,26 +7,48 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include <pthread.h>
 
 static const double PI = 3.1415926535897;
+// ratio used for adjusting branch width
 static double r;
+
+// struct used for passing info on a branch job to threads
+typedef struct thread_branch_info_ {
+    png_utils::PNG* png;
+    int x;
+    int y;
+    double d;
+    double theta;
+    double hue;
+    double children;
+    double p;
+} thread_branch_info;
+
+pthread_mutex_t lock;
 
 /**
  * colors all the points in an epsilon neighborhood of x and y
  */
-void color_neighborhood(png_utils::PNG & image, double x, double y, double eps, int hue) {
+void color_neighborhood(png_utils::PNG* image, double x, double y, double eps, int hue) {
     // always color the point closest to (x,y)
-    png_utils::HSLAPixel* pixel = &image.getPixel(std::floor(x), std::floor(y));
-    *pixel = png_utils::HSLAPixel(hue, 1, 0.5);
-    
+    pthread_mutex_lock(&lock);
+    png_utils::HSLAPixel & pixel = image->getPixel(std::floor(x), std::floor(y));
+    pixel = png_utils::HSLAPixel(hue, 1, 0.5);
+    pthread_mutex_unlock(&lock);
+
     // iterate over square containing circle
     for (int x_hat = std::floor(x - eps); x_hat < std::ceil(x + eps); x_hat++) {
         for (int y_hat = std::floor(y - eps); y_hat < std::ceil(y + eps); y_hat++) {
+
             // if the point is in an epsilon neighborhood of (x,y), we color it
             if (std::pow(x_hat - x, 2) + std::pow(y_hat - y, 2) < eps * eps) {
-                pixel = &image.getPixel(x_hat, y_hat);
-                *pixel = png_utils::HSLAPixel(hue, 1, 0.5);
+                pthread_mutex_lock(&lock);
+                png_utils::HSLAPixel & pixel = image->getPixel(x_hat, y_hat);
+                pixel = png_utils::HSLAPixel(hue, 1, 0.5);
+                pthread_mutex_unlock(&lock);
             }
+
         }
     }
 }
@@ -37,7 +59,7 @@ void color_neighborhood(png_utils::PNG & image, double x, double y, double eps, 
  * also takes an input "hue" to determine the color of the line
  * returns the end point of the line segment drawn as a vector
  */
-std::vector<int> draw_line_angle(png_utils::PNG & image, int x, int y, double d, double theta, int hue, int width) {
+std::vector<int> draw_line_angle(png_utils::PNG* image, int x, int y, double d, double theta, int hue, int width) {
     // unit vector in the direction theta
     double v_hat[2] = {std::cos(theta), std::sin(theta)};
 
@@ -55,7 +77,7 @@ std::vector<int> draw_line_angle(png_utils::PNG & image, int x, int y, double d,
     return ret;
 }
 
-void draw_branch(png_utils::PNG & image, int x, int y, double d, double theta, int hue, int children, int p) {
+void draw_branch(png_utils::PNG* image, int x, int y, double d, double theta, int hue, int children, int p) {
     // this is a leaf
     if (children == -1) {
         return;
@@ -97,23 +119,37 @@ double get_branch_length(double d, double theta, double new_angle, int p) {
     // return d * r;
 }
 
+void* thread_draw_branch_wrapper(void* job) {
+    thread_branch_info* _job = (thread_branch_info*) job;
+
+    draw_branch(_job->png, _job->x, _job->y, _job->d, _job->theta, _job->hue, _job->children, _job->p);
+    return NULL;
+}
+
 /**
  * Wrapper function for generating image of Z_p with children
  * will eventually use multithreading
  */
 png_utils::PNG p_adic_draw(int width, int height, int p, int children) {
     
-    png_utils::PNG png(width, height);
-    
+    // make png object to draw on
+    png_utils::PNG image(width, height);
+
+    // initialize constants
     const int START_HUE = 200;
     r = 0.5;
 
+    // array to store thread ids; one thread per root branch
+    pthread_t threads[p];
+    thread_branch_info* jobs[p];
+    pthread_mutex_init(&lock, NULL);
+
     //Set the background to a cool gradient
-    for (unsigned int x = 0; x < png.width(); x++){
-        for (unsigned int y = 0; y < png.height(); y++){
-        png_utils::HSLAPixel & pixel = png.getPixel(x, y);
+    for (unsigned int x = 0; x < image.width(); x++){
+        for (unsigned int y = 0; y < image.height(); y++){
+        png_utils::HSLAPixel & pixel = image.getPixel(x, y);
         pixel.l = 0.2;
-        pixel.h = 220 + std::floor(80 * y / png.height());
+        pixel.h = 220 + std::floor(80 * y / image.height());
         pixel.s = 0.4;
         }
     }
@@ -122,13 +158,29 @@ png_utils::PNG p_adic_draw(int width, int height, int p, int children) {
     double start_d = (1 - r) * width / 2.;
     int center[2] = {width / 2, (p - 1) * height / p};
 
-    // TODO: make each iteration of the loop call its own thread
     double theta = 3 * PI / 2;
     for (int c = 0; c < p; c++) {
-        double new_angle = get_new_angle(theta, c, p);
-        double new_d = get_branch_length(start_d / r, theta, new_angle, p);
-        draw_branch(png, center[0], center[1], new_d, new_angle, START_HUE, children, p);
+
+        jobs[c] = new thread_branch_info();
+
+        jobs[c]->png = &image;
+        jobs[c]->children = children;
+        jobs[c]->hue = START_HUE;
+        jobs[c]->theta = get_new_angle(theta, c, p);
+        jobs[c]->d = get_branch_length(start_d / r, theta, jobs[c]->theta, p);
+        jobs[c]->x = center[0];
+        jobs[c]->y = center[1];
+        jobs[c]->p = p;
+
+        pthread_create(threads + c, NULL, thread_draw_branch_wrapper, (void *) jobs[c]);
+
+        // draw_branch(png, center[0], center[1], new_d, new_angle, START_HUE, children, p);
     }
 
-  return png;
+    // wait for all the threads to finish
+    for (int c = 0; c < p; c++) {
+        pthread_join(threads[c], NULL);
+    }
+
+  return image;
 }
