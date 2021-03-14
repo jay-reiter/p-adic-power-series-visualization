@@ -10,8 +10,10 @@
 #include <pthread.h>
 
 static const double PI = 3.1415926535897;
-// ratio used for adjusting branch width
 static double r;
+
+// array to store p hues used for each coset
+int* hues;
 
 image_style style;
 
@@ -96,9 +98,9 @@ void draw_branch(png_utils::PNG* image, int x, int y, double d, double theta, in
     for (int c = 0; c < p; c++) {
 
         double new_angle = get_new_angle(theta, c, p);
-        double new_d = get_branch_length(d, theta, new_angle, p);
+        double new_d = std::abs(get_branch_length(d, theta, new_angle, p));
 
-        draw_branch(image, new_center[0], new_center[1], new_d, new_angle, (hue + 50) % 360, children - 1, p);
+        draw_branch(image, new_center[0], new_center[1], new_d, new_angle, hues[c], children - 1, p);
     }
 }
 
@@ -113,15 +115,8 @@ double get_new_angle(double theta, int c, int p) {
     }
     // TODO: rotate most of the way around each vertex
     if (style == swirl) {
-        double new_angle = theta + ((c * 2 * PI) / p);
-        
-        // reduce modulo PI
-        new_angle = std::cos(theta - new_angle) > 0 ? new_angle : new_angle - PI;
-        new_angle = std::fmod(new_angle, 2 * PI);
-
-        // fan out, so branches cover more of circle (1 = half circle, 2 = full circle)
-        double fan_factor = 1.618;
-        new_angle = theta - fan_factor * (theta - new_angle);
+        double k = c - std::floor(p * 0.5);
+        double new_angle = theta - k * 2 * PI / (p + 1.);
 
         return new_angle;
     }
@@ -139,19 +134,17 @@ double get_new_angle(double theta, int c, int p) {
  */
 double get_branch_length(double d, double theta, double new_angle, int p) {
     if (style == spikey) {
-        r = 0.6;
         return d * r * std::abs(1 - std::abs(std::fmod(theta - new_angle, PI)) / ((PI / 2)));
     }
 
     if (style == swirl) {
         double scale_factor = std::fmod(theta - std::fmod(new_angle, 2 * PI) + PI, 2 * PI) / (2 * PI);
         scale_factor = std::pow(scale_factor, 1.5);
-        return d * (0.06 + 0.3 * scale_factor) * 1.5;
+        return d * (0.08 + 0.27 * scale_factor) * 1.5;
     }
 
     // makes branch length the same across cosets; only decreases with generation (power of p coset)
     if (style == classic) {
-        r = 0.2;
         return d * r;
     }
 }
@@ -173,12 +166,9 @@ png_utils::PNG p_adic_draw(int width, int height, int p, int children, image_sty
     png_utils::PNG image(width, height);
 
     // initialize constants
-    const int START_HUE = 200;
     style = s;
-
     // initial length of branch components; will make tree go all the way to the edge of the png
     double start_d;
-
     int center[2] = {width / 2, 0};
     switch (style) {
 
@@ -197,8 +187,14 @@ png_utils::PNG p_adic_draw(int width, int height, int p, int children, image_sty
         case swirl:
             r = 0.6; 
             center[1] = width / 2;
-            start_d = (1 - r) * width;
+            start_d = (0.5) * width;
             break;
+    }
+
+    hues = (int*) calloc(p, sizeof(int));
+    for (int i = 0; i < p; i++) {
+        hues[i] = (int) std::fmod(i * (360 / p), 360);
+        // std::cout << "hues[" << i << "] = " << hues[i] << std::endl;
     }
 
     // array to store thread ids; one thread per root branch
@@ -224,13 +220,16 @@ png_utils::PNG p_adic_draw(int width, int height, int p, int children, image_sty
 
         jobs[c]->png = &image;
         jobs[c]->children = children;
-        jobs[c]->hue = START_HUE;
+        jobs[c]->hue = hues[c];
         jobs[c]->theta = get_new_angle(theta, c, p);
         jobs[c]->d = get_branch_length(start_d / r, theta, jobs[c]->theta, p);
         jobs[c]->x = center[0];
         jobs[c]->y = center[1];
         jobs[c]->p = p;
+    }
 
+    // start threads
+    for (int c = 0; c < p; c++) {
         pthread_create(threads + c, NULL, thread_draw_branch_wrapper, (void *) jobs[c]);
     }
 

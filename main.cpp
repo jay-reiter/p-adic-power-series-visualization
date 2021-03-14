@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     unsigned int children = (unsigned int) atoi(argv[4]);
 
     // TODO: make changing the enum input here easier
-    png_utils::PNG png = p_adic_draw(width, width, p, children, swirl);
+    png_utils::PNG png = p_adic_draw(width, width, p, children, spikey);
     
     // if there is a user-specified target file
     if (argc == 6) {
