@@ -25,6 +25,7 @@ typedef struct thread_branch_info_ {
     double p;
 } thread_branch_info;
 
+// lock for thread safety
 pthread_mutex_t lock;
 
 /**
@@ -68,6 +69,7 @@ std::vector<int> draw_line_angle(png_utils::PNG* image, int x, int y, double d, 
     // start at (x,y) and color all lattice points near (x,y)+k*v_hat for 0<k<d
     for (int k = 0; k < d; k++) {
         // increment current point by v_hat
+        // TODO: increment by width/2*v_hat insdead to improve performance
         curr_point[0] += v_hat[0];
         curr_point[1] += v_hat[1];
 
@@ -78,12 +80,15 @@ std::vector<int> draw_line_angle(png_utils::PNG* image, int x, int y, double d, 
 }
 
 void draw_branch(png_utils::PNG* image, int x, int y, double d, double theta, int hue, int children, int p) {
-    // this is a leaf
     if (children == -1) {
+        // this is a leaf
         return;
     }
+
+    double width = p * std::log10(d) * children / 10;
+
     // TODO: store this point in a p^n coset vector somewhere so we can use its coordinates for calculations later; may need to use a struct?
-    std::vector<int> new_center = draw_line_angle(image, x, y, d, theta, hue, std::log10(d) * children);
+    std::vector<int> new_center = draw_line_angle(image, x, y, d, theta, hue, width);
 
     // recursively call p more branches off the end of this one
     for (int c = 0; c < p; c++) {
@@ -110,6 +115,8 @@ double get_new_angle(double theta, int c, int p) {
  * calculates new branch length based on angle relative to parent angle
  */
 double get_branch_length(double d, double theta, double new_angle, int p) {
+    // TODO: make it easy to switch between these option
+
     // makes branch length depend on angle--useful for avoiding branhc collisions
     r = 0.6;
     return d * r * std::abs(1 - std::abs(std::fmod(theta - new_angle, PI)) / ((PI / 2)));
@@ -137,7 +144,8 @@ png_utils::PNG p_adic_draw(int width, int height, int p, int children) {
 
     // initialize constants
     const int START_HUE = 200;
-    r = 0.5;
+    // TODO: adjust this constant automatically
+    r = 0.6;
 
     // array to store thread ids; one thread per root branch
     pthread_t threads[p];
@@ -159,6 +167,7 @@ png_utils::PNG p_adic_draw(int width, int height, int p, int children) {
     int center[2] = {width / 2, (p - 1) * height / p};
 
     double theta = 3 * PI / 2;
+    // create threads and send them on jobs
     for (int c = 0; c < p; c++) {
 
         jobs[c] = new thread_branch_info();
@@ -173,8 +182,6 @@ png_utils::PNG p_adic_draw(int width, int height, int p, int children) {
         jobs[c]->p = p;
 
         pthread_create(threads + c, NULL, thread_draw_branch_wrapper, (void *) jobs[c]);
-
-        // draw_branch(png, center[0], center[1], new_d, new_angle, START_HUE, children, p);
     }
 
     // wait for all the threads to finish
