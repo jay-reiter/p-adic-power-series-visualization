@@ -29,7 +29,9 @@ int main(int argc, char *argv[]) {
     unsigned int width = (unsigned int) atoi(argv[2]);
     unsigned int p = (unsigned int) atoi(argv[3]);
     unsigned int children = (unsigned int) atoi(argv[4]);
-    png_utils::PNG png = p_adic_draw(width, width, p, children);
+
+    // TODO: make changing the enum input here easier
+    png_utils::PNG png = p_adic_draw(width, width, p, children, swirl);
     
     // if there is a user-specified target file
     if (argc == 6) {

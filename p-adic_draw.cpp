@@ -13,6 +13,8 @@ static const double PI = 3.1415926535897;
 // ratio used for adjusting branch width
 static double r;
 
+image_style style;
+
 // struct used for passing info on a branch job to threads
 typedef struct thread_branch_info_ {
     png_utils::PNG* png;
@@ -104,26 +106,54 @@ void draw_branch(png_utils::PNG* image, int x, int y, double d, double theta, in
  * calculates a new angle for a branch to stem from based on parent angle and branch coset
  */
 double get_new_angle(double theta, int c, int p) {
-    double new_angle = theta + ((c * 2 * PI) / p);
-    // reduce modulo PI
-    new_angle = std::cos(theta - new_angle) > 0 ? new_angle : new_angle - PI;
-    
-    return new_angle;
+    // rotate all the way around each vertex
+    if (style == classic) {
+        double new_angle = theta + ((c * 2 * PI) / p);
+        return new_angle;
+    }
+    // TODO: rotate most of the way around each vertex
+    if (style == swirl) {
+        double new_angle = theta + ((c * 2 * PI) / p);
+        
+        // reduce modulo PI
+        new_angle = std::cos(theta - new_angle) > 0 ? new_angle : new_angle - PI;
+        new_angle = std::fmod(new_angle, 2 * PI);
+
+        // fan out, so branches cover more of circle (1 = half circle, 2 = full circle)
+        double fan_factor = 1.618;
+        new_angle = theta - fan_factor * (theta - new_angle);
+
+        return new_angle;
+    }
+    // branches only come out in 180 degree range
+    else {
+        double new_angle = theta + ((c * 2 * PI) / p);
+        // reduce modulo PI
+        new_angle = std::cos(theta - new_angle) > 0 ? new_angle : new_angle - PI;
+        return new_angle;
+    }
 }
 
 /**
  * calculates new branch length based on angle relative to parent angle
  */
 double get_branch_length(double d, double theta, double new_angle, int p) {
-    // TODO: make it easy to switch between these option
+    if (style == spikey) {
+        r = 0.6;
+        return d * r * std::abs(1 - std::abs(std::fmod(theta - new_angle, PI)) / ((PI / 2)));
+    }
 
-    // makes branch length depend on angle--useful for avoiding branhc collisions
-    r = 0.6;
-    return d * r * std::abs(1 - std::abs(std::fmod(theta - new_angle, PI)) / ((PI / 2)));
+    if (style == swirl) {
+        double scale_factor = std::fmod(theta - std::fmod(new_angle, 2 * PI) + PI, 2 * PI) / (2 * PI);
+        scale_factor = std::pow(scale_factor, 1.5);
+        return d * (0.06 + 0.3 * scale_factor) * 1.5;
+    }
 
     // makes branch length the same across cosets; only decreases with generation (power of p coset)
-    // r = 0.2;
-    // return d * r;
+    if (style == classic) {
+        r = 0.2;
+        return d * r;
+    }
 }
 
 void* thread_draw_branch_wrapper(void* job) {
@@ -137,15 +167,39 @@ void* thread_draw_branch_wrapper(void* job) {
  * Wrapper function for generating image of Z_p with children
  * will eventually use multithreading
  */
-png_utils::PNG p_adic_draw(int width, int height, int p, int children) {
+png_utils::PNG p_adic_draw(int width, int height, int p, int children, image_style s) {
     
     // make png object to draw on
     png_utils::PNG image(width, height);
 
     // initialize constants
     const int START_HUE = 200;
-    // TODO: adjust this constant automatically
-    r = 0.6;
+    style = s;
+
+    // initial length of branch components; will make tree go all the way to the edge of the png
+    double start_d;
+
+    int center[2] = {width / 2, 0};
+    switch (style) {
+
+        case classic:
+            r = 0.2; 
+            center[1] = width / 2;
+            start_d = (1 - r) * width / 2.;
+            break;
+
+        case spikey:
+            r = 0.6; 
+            center[1] = (p - 1) * height / p;
+            start_d = (1 - r) * width / 2.;
+            break;
+
+        case swirl:
+            r = 0.6; 
+            center[1] = width / 2;
+            start_d = (1 - r) * width;
+            break;
+    }
 
     // array to store thread ids; one thread per root branch
     pthread_t threads[p];
@@ -161,10 +215,6 @@ png_utils::PNG p_adic_draw(int width, int height, int p, int children) {
         pixel.s = 0.4;
         }
     }
-
-    // initial length of branch components; will make tree go all the way to the edge of the png
-    double start_d = (1 - r) * width / 2.;
-    int center[2] = {width / 2, (p - 1) * height / p};
 
     double theta = 3 * PI / 2;
     // create threads and send them on jobs
