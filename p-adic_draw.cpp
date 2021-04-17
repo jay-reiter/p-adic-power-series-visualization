@@ -8,9 +8,13 @@
 #include <cmath>
 #include <vector>
 #include <pthread.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 static const double PI = 3.1415926535897;
 static double r;
+
+static Node* origin = NULL;
 
 // array to store p hues used for each coset
 int* hues;
@@ -27,6 +31,7 @@ typedef struct thread_branch_info_ {
     double hue;
     double children;
     double p;
+    Node* node;
 } thread_branch_info;
 
 // lock for thread safety
@@ -41,6 +46,8 @@ void color_neighborhood(png_utils::PNG* image, double x, double y, double eps, i
     png_utils::HSLAPixel & pixel = image->getPixel(std::floor(x), std::floor(y));
     pixel = png_utils::HSLAPixel(hue, 1, 0.5);
     pthread_mutex_unlock(&lock);
+
+    if (eps < 0.5) return;
 
     // iterate over square containing circle
     for (int x_hat = std::floor(x - eps); x_hat < std::ceil(x + eps); x_hat++) {
@@ -83,7 +90,12 @@ std::vector<int> draw_line_angle(png_utils::PNG* image, int x, int y, double d, 
     return ret;
 }
 
-void draw_branch(png_utils::PNG* image, int x, int y, double d, double theta, int hue, int children, int p) {
+/**
+ * function to draw one segment of a branch of the tree
+ * starts at point (x,y) and draws line of length d at angle theta
+ * it will have "children" following generations
+ */
+void draw_branch(png_utils::PNG* image, int x, int y, double d, double theta, int hue, int children, int p, Node* node) {
     if (children == -1) {
         // this is a leaf
         return;
@@ -91,8 +103,13 @@ void draw_branch(png_utils::PNG* image, int x, int y, double d, double theta, in
 
     double width = p * std::log10(d) * children / 10;
 
-    // TODO: store this point in a p^n coset vector somewhere so we can use its coordinates for calculations later; may need to use a struct?
+    // draw the line connecting this to the new point
     std::vector<int> new_center = draw_line_angle(image, x, y, d, theta, hue, width);
+
+    // record the location of this point
+    node->x = new_center[0];
+    node->y = new_center[1];
+    node->children = (Node*) calloc(sizeof(Node), p);
 
     // recursively call p more branches off the end of this one
     for (int c = 0; c < p; c++) {
@@ -100,7 +117,7 @@ void draw_branch(png_utils::PNG* image, int x, int y, double d, double theta, in
         double new_angle = get_new_angle(theta, c, p);
         double new_d = std::abs(get_branch_length(d, theta, new_angle, p));
 
-        draw_branch(image, new_center[0], new_center[1], new_d, new_angle, hues[c], children - 1, p);
+        draw_branch(image, new_center[0], new_center[1], new_d, new_angle, hues[c], children - 1, p, node->children + c);
     }
 }
 
@@ -152,7 +169,7 @@ double get_branch_length(double d, double theta, double new_angle, int p) {
 void* thread_draw_branch_wrapper(void* job) {
     thread_branch_info* _job = (thread_branch_info*) job;
 
-    draw_branch(_job->png, _job->x, _job->y, _job->d, _job->theta, _job->hue, _job->children, _job->p);
+    draw_branch(_job->png, _job->x, _job->y, _job->d, _job->theta, _job->hue, _job->children, _job->p, _job->node);
     return NULL;
 }
 
@@ -192,10 +209,10 @@ png_utils::PNG p_adic_draw(int width, int height, int p, int children, image_sty
     }
 
     hues = (int*) calloc(p, sizeof(int));
-    for (int i = 0; i < p; i++) {
-        hues[i] = (int) std::fmod(i * (360 / p), 360);
-        // std::cout << "hues[" << i << "] = " << hues[i] << std::endl;
-    }
+    // for (int i = 0; i < p; i++) {
+    //     hues[i] = (int) std::fmod(i * (360 / p), 360);
+    //     // std::cout << "hues[" << i << "] = " << hues[i] << std::endl;
+    // }
 
     // array to store thread ids; one thread per root branch
     pthread_t threads[p];
@@ -212,6 +229,12 @@ png_utils::PNG p_adic_draw(int width, int height, int p, int children, image_sty
         }
     }
 
+    // initialize the origin point
+    origin = (Node*) malloc(sizeof(Node));
+    origin->x = center[0];
+    origin->y = center[1];
+    origin->children = (Node*) calloc(sizeof(Node), p);
+
     double theta = 3 * PI / 2;
     // create threads and send them on jobs
     for (int c = 0; c < p; c++) {
@@ -226,6 +249,7 @@ png_utils::PNG p_adic_draw(int width, int height, int p, int children, image_sty
         jobs[c]->x = center[0];
         jobs[c]->y = center[1];
         jobs[c]->p = p;
+        jobs[c]->node = origin->children + c;
     }
 
     // start threads
@@ -238,5 +262,39 @@ png_utils::PNG p_adic_draw(int width, int height, int p, int children, image_sty
         pthread_join(threads[c], NULL);
     }
 
+    int tuple[4] = {6,6,6,6};
+    trace_sequence(&image, p, tuple, 4, start_d / r, 100);
+
   return image;
+}
+
+/**
+ * given an tuple in {0,1,2,...,p-1} of length len, this traces the corresponding branch in the image in the given hue
+ */
+void trace_sequence(png_utils::PNG* image, int p, int* tuple, int len, double start_d, int hue) {
+    Node node = *origin;
+
+    double new_angle = get_new_angle(0, 0, p);
+    double d = start_d;
+    double theta = new_angle;
+    double width;
+
+    int i = 0;
+    do {
+        width = p * std::log10(d) * (len - i) / 10;
+
+        // draw line from current point to next
+        draw_line_angle(image, node.x, node.y, d, theta, hue, width);
+
+        // adjust params for next iteration
+        new_angle = get_new_angle(theta, tuple[i + 1], p);
+        d = std::abs(get_branch_length(d, theta, new_angle, p));
+        theta = new_angle;
+
+        // set node to next point according to passed tuple
+        node = node.children[tuple[i + 1]];
+
+        i++;
+
+    } while (i <= len);
 }
