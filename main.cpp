@@ -3,6 +3,7 @@
 
 #include "dragon_fractal.h"
 #include "p-adic_draw.h"
+#include "p_adic.h"
 
 #include "png_utils/PNG.h"
 
@@ -10,10 +11,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+void math_test();
+
 int main(int argc, char *argv[]) {
   if (argc == 1) {
     // usage message
-    std::cout << "Usage: \n\t./image dragon <width>\n\t./image p_adic <width> <p> <children> [target_file_name]" << std::endl;
+    std::cout << "Usage: \n\t./image dragon <width>\n\t./image p_adic <width> <p> <children> [target_file_name]\n";
     exit(1);
   }
 
@@ -48,6 +51,18 @@ int main(int argc, char *argv[]) {
       png.writeToFile("p_adic.png");
     }
   }
+
+  if (!strcmp(argv[1], "math")) {
+    math_test();
+  }
   
   return 0;
+}
+
+void math_test() {
+  p_adic<7> zero = p_adic<7>();
+  p_adic<7> a = p_adic<7>({1,2,3,4,5});
+  p_adic<7> b = p_adic<7>({4,3,2});
+  std::cout << "Here are the numbers:\n" << zero << "\n" << a << "\n" << b << std::endl;
+  std::cout << "a + b = " << a + b << std::endl; 
 }

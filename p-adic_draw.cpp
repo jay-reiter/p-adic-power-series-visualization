@@ -2,6 +2,7 @@
 #include "png_utils/HSLAPixel.h"
 
 #include "p-adic_draw.h"
+#include "p_adic.h"
 
 #include <string>
 #include <iostream>
@@ -116,7 +117,7 @@ std::vector<int> draw_line_angle(png_utils::PNG* image, int x, int y, double d, 
  * starts at point (x,y) and draws line of length d at angle theta
  * it will have "children" following generations
  */
-void draw_branch(png_utils::PNG* image, int x, int y, double d, double theta, int hue, int children, int p, Node* node, color_type ct) {
+void draw_branch(png_utils::PNG* image, int x, int y, double d, double theta, int hue, int children, const int p, Node* node, color_type ct) {
     if (children == -1) {
         // this is a leaf
         return;
@@ -146,7 +147,7 @@ void draw_branch(png_utils::PNG* image, int x, int y, double d, double theta, in
 /**
  * calculates a new angle for a branch to stem from based on parent angle and branch coset
  */
-double get_new_angle(double theta, int c, int p) {
+double get_new_angle(double theta, int c, const int p) {
     // rotate all the way around each vertex
     if (style == classic) {
         double new_angle = theta + ((c * 2 * PI) / p);
@@ -171,7 +172,7 @@ double get_new_angle(double theta, int c, int p) {
 /**
  * calculates new branch length based on angle relative to parent angle
  */
-double get_branch_length(double d, double theta, double new_angle, int p) {
+double get_branch_length(double d, double theta, double new_angle, const int p) {
     if (style == spikey) {
         return d * r * std::abs(1 - std::abs(std::fmod(theta - new_angle, PI)) / ((PI / 2)));
     }
@@ -199,7 +200,7 @@ void* thread_draw_branch_wrapper(void* job) {
  * Wrapper function for generating image of Z_p with children
  * will eventually use multithreading
  */
-png_utils::PNG p_adic_draw(int width, int height, int p, int children, image_style s) {
+png_utils::PNG p_adic_draw(int width, int height, const int p, int children, image_style s) {
     
     // make png object to draw on
     png_utils::PNG image(width, height);
@@ -289,10 +290,12 @@ png_utils::PNG p_adic_draw(int width, int height, int p, int children, image_sty
     return image;
 }
 
+
+
 /**
  * given an tuple in {0,1,2,...,p-1} of length len, this traces the corresponding branch in the image in the given hue
  */
-void trace_sequence(png_utils::PNG* image, int p, int* tuple, int len, double start_d, int hue) {
+void trace_sequence(png_utils::PNG* image, const int p, int* tuple, int len, double start_d, int hue) {
     Node node = *origin;
 
     double new_angle = get_new_angle(3 * PI / 2, tuple[0], p);
