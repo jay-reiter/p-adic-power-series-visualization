@@ -20,6 +20,23 @@ unsigned int p_adic<p>::size() const {
 }
 
 template <unsigned int p>
+unsigned int p_adic<p>::ord() const {
+    unsigned int ord = 0;
+    auto itr = this->x.begin();
+    while (itr != this->x.end()) {
+        if (*itr != 0) return ord;
+        ord++;
+        itr++;
+    }
+    return INFINITY;
+}
+
+template <unsigned int p>
+double p_adic<p>::norm() const {
+    return pow(p, -1. * this->ord());    
+}
+
+template <unsigned int p>
 p_adic<p> p_adic<p>::operator+(const p_adic<p>& other) const {
     p_adic sum = p_adic();
 
@@ -51,8 +68,73 @@ p_adic<p> p_adic<p>::operator+(const p_adic<p>& other) const {
 }
 
 template <unsigned int p>
-p_adic<p> p_adic<p>::operator*(const p_adic<p>& other) const {
-    return p_adic();
+p_adic<p>& p_adic<p>::operator+=(const p_adic<p>& rhs) {
+    *this = *this + rhs;
+    return *this;
+}
+
+template <unsigned int p>
+p_adic<p> p_adic<p>::single_digit_multiply(const unsigned int a, const p_adic<p>& b) const {
+    // if a == p, we just add a 0 on the end
+    if (a == p) {
+        p_adic<p> ret = b;
+        ret.x.insert(ret.x.begin(), 0);
+        return ret;
+    }
+    // otherwise, make sure a is in {0,1,2,...,p-1}
+    assert(0 <= a && a < p);
+
+    unsigned int carry_over = 0;
+    unsigned int remainder = 0;
+    unsigned int s;
+
+    p_adic<p> ret = p_adic();
+    for (unsigned int i = 0; i < b.size(); i++) {
+        s = a * b[i] + carry_over;
+        remainder = s % p;
+        carry_over = (s - remainder) / p;
+        ret.x.push_back(remainder);
+    }
+    if (carry_over) {
+        ret.x.push_back(carry_over);
+    }
+
+    return ret;
+}
+
+template <unsigned int p>
+p_adic<p> p_adic<p>::operator*(const p_adic<p>& b) const {
+    
+    std::size_t b_len = b.size();
+
+    // initialize sum to 0
+    p_adic<p> sum = p_adic({0});
+
+    // multiply a by each digit of b, then add p^i that to the sum
+    for (unsigned int i = 0; i < b_len; i++) {
+        p_adic<p> term = single_digit_multiply((*this)[i], b);
+
+        // multiply term by p^i
+        for (unsigned int j = 0; j < i; j++) {
+            term = single_digit_multiply(p, term);
+        }
+
+        sum += term;
+    }
+    return sum;
+}
+
+template <unsigned int p>
+p_adic<p>& p_adic<p>::operator*=(const p_adic<p>& rhs) {
+    *this = *this * rhs;
+    return *this;
+}
+
+template <unsigned int p>
+p_adic<p> p_adic<p>::pow(unsigned int b) const {
+    p_adic<p> ret = p_adic({1});
+    for (int i = 0; i < b; i++) ret *= *this;
+    return ret;
 }
 
 template <unsigned int p>

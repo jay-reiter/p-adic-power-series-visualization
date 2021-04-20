@@ -63,6 +63,11 @@ void math_test() {
   // p_adic<7> zero = p_adic<7>();
   p_adic<7> a = p_adic<7>({1,2,1});
   p_adic<7> b = p_adic<7>({4,3,2});
-  std::cout << "Here are the numbers:\n" << a << "\n" << b << std::endl;
-  std::cout << "a + b = " << a + b << std::endl; 
+  p_adic<7> c = p_adic<7>({0,0,0,0,0,4,3});
+  p_adic<7> d = p_adic<7>({0,0,2,6,6,6,6,6});
+  p_adic<7> e = p_adic<7>({0,0,0,0,0,0,0});
+  std::cout << "Here are the numbers:\n" << a << "\n" << b << "\n" << c << "\n" << d << "\n" << e << std::endl;
+  std::cout << "a * b = " << a * b << std::endl;
+  std::cout << "ord(a,b,c,d)=" << a.ord() << ", " << b.ord() << ", " << c.ord() << ", " << d.ord() << ", " << e.ord() << std::endl;
+  std::cout << "norm(a,b,c,d)=" << a.norm() << ", " << b.norm() << ", " << c.norm() << ", " << d.norm() << ", " << e.norm() << std::endl;
 }
