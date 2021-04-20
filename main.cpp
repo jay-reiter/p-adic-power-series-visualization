@@ -60,9 +60,9 @@ int main(int argc, char *argv[]) {
 }
 
 void math_test() {
-  p_adic<7> zero = p_adic<7>();
-  p_adic<7> a = p_adic<7>({1,2,3,4,5});
+  // p_adic<7> zero = p_adic<7>();
+  p_adic<7> a = p_adic<7>({1,2,1});
   p_adic<7> b = p_adic<7>({4,3,2});
-  std::cout << "Here are the numbers:\n" << zero << "\n" << a << "\n" << b << std::endl;
+  std::cout << "Here are the numbers:\n" << a << "\n" << b << std::endl;
   std::cout << "a + b = " << a + b << std::endl; 
 }
