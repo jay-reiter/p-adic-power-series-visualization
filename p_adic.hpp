@@ -169,7 +169,7 @@ std::ostream& operator<<(std::ostream& out, const p_adic<p>& num) {
 template <unsigned int p>
 double power_series(p_adic<p> x, unsigned k, double a(unsigned)) {
     // first figure out how many terms we will need to compute to estimate this up to coset
-
+    
 
     return 0;
 }
