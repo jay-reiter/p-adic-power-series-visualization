@@ -33,7 +33,7 @@ unsigned int p_adic<p>::ord() const {
 
 template <unsigned int p>
 double p_adic<p>::norm() const {
-    return pow(p, -1. * this->ord());    
+    return std::pow(p, -1. * this->ord());    
 }
 
 template <unsigned int p>
@@ -158,4 +158,18 @@ std::ostream& operator<<(std::ostream& out, const p_adic<p>& num) {
     } while (i > 0);
     
     return out;
+}
+
+/**
+ * evaluates the power series given by $\sum_{n\geq0} a_n x^n/n!
+ * a_n is a function pointer used to determine the coefficients
+ * 
+ * estimates up to some element of p^k Z_p
+ */
+template <unsigned int p>
+double power_series(p_adic<p> x, unsigned k, double a(unsigned)) {
+    // first figure out how many terms we will need to compute to estimate this up to coset
+
+
+    return 0;
 }

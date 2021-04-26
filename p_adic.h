@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <math.h>
+#include <cmath>
 
 template <unsigned int p> 
 class p_adic {
