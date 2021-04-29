@@ -45,6 +45,56 @@ double p_adic<p>::norm() const {
 }
 
 template <unsigned int p>
+p_adic<p> p_adic<p>::inv(unsigned k) const {
+    // make sure we have been passed a p-adic integer!
+    assert(this->m == 0);
+    
+    // we use long division to compute 1/a
+
+    // first convert a to a unit in Z_p:
+    p_adic<p> a_bar = p_adic<p>(*this);
+    unsigned c = 0;
+    std::cout << "a_bar=" << a_bar << std::endl;
+    while (a_bar.x[0] == 0) {
+        a_bar.x.erase(a_bar.x.begin());
+        c++;
+    }
+
+    // compute x in 0,1,2,... p-1 so a_bar * x == 1 mod p
+    // use FLT, then reduce mod p (get 0th index)
+    unsigned x = a_bar.pow(p - 2)[0];
+    // first non-zero digit of remainder
+    unsigned w;
+
+    // pre-allocate a vector of size k
+    p_adic<p> quotient = p_adic<p>(std::vector<unsigned>(k, 0U));
+    // initialize remainder to 1
+    p_adic<p> remainder = p_adic<p>({DIGIT_ACCURACY, 0U});
+    remainder.x[0] = 1;
+
+    std::cout << "Remainder = " << remainder << std::endl;
+
+    for (unsigned i = 0; i < k; i++) {
+        // get first nonzero digit of remainder
+        unsigned j = 0;
+        do {
+            w = remainder.x[j];
+            j++;
+        } while (w == 0);
+
+        quotient.x[i] = (w * x) % p;
+        remainder -= single_digit_multiply((w * x) % p, a_bar);
+
+        // we have now zeroed out the first digit, so move remainder down
+        remainder.x.erase(remainder.x.begin());
+
+        // TODO: recognize repeat remainders?
+    }
+
+    return quotient;
+} 
+
+template <unsigned int p>
 p_adic<p> p_adic<p>::operator+(const p_adic<p>& other) const {
     p_adic sum = p_adic();
 
@@ -74,12 +124,6 @@ p_adic<p> p_adic<p>::operator+(const p_adic<p>& other) const {
 
     sum.m = std::max(this->m, other.m);
     // if we happen to get a zero in the last digit, we should trim that off so boost performance
-    if (sum.x[0] == 0) {
-        // erase first entry in vec
-        sum.x.erase(sum.x.begin());
-        // decrement number of decimal places
-        sum.m--;
-    }
 
     return sum;
 }
@@ -146,6 +190,26 @@ template <unsigned int p>
 p_adic<p>& p_adic<p>::operator*=(const p_adic<p>& rhs) {
     *this = *this * rhs;
     return *this;
+}
+
+template <unsigned int p>
+p_adic<p> p_adic<p>::operator-() const {
+    // construct p-adic -1 to the same number of digits of this
+    p_adic<p> negative = p_adic(std::vector<unsigned>(DIGIT_ACCURACY, p - 1), 0);
+    return negative * (*this);
+}
+
+template <unsigned int p>
+p_adic<p> p_adic<p>::operator-(const p_adic<p>& other) const {
+    // std::cout << "this=" << *this << " other = " << other << " -other = " << -other << "\nTheir sum is: this+(-other)= " << ((*this) + (-other)) << std::endl;
+    // return p_adic<p>({0});
+    return *this + (-other);
+}
+
+template <unsigned int p>
+p_adic<p>& p_adic<p>::operator-=(const p_adic<p>& rhs) {
+    p_adic<p> ret = *this - rhs;
+    return ret;
 }
 
 template <unsigned int p>

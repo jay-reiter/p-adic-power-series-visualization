@@ -7,6 +7,9 @@
 #include <math.h>
 #include <cmath>
 
+// the number of digits used to approximate infinitely repeating p-adic numbers
+#define DIGIT_ACCURACY 20
+
 template <unsigned int p> class p_adic;
 
 template <unsigned int p>
@@ -70,15 +73,23 @@ class p_adic {
         
         // get the p-adic order; index of first non-zero digit, reading from right to left
         int ord() const;
+
         // get the p-adic norm
         double norm() const;
+
         // raises to non-negative integer power
         p_adic pow(unsigned int b) const;
+
+        // computes the multiplicative inverse of a p-adic integer, up to k digits of accuracy
+        p_adic<p> inv(unsigned k) const;
 
         p_adic operator+(const p_adic<p>& other) const;
         p_adic& operator+=(const p_adic<p>& rhs);
         p_adic operator*(const p_adic<p>& other) const;
         p_adic& operator*=(const p_adic<p>& rhs);
+        p_adic<p> operator-() const;
+        p_adic operator-(const p_adic<p>& other) const;
+        p_adic& operator-=(const p_adic<p>& rhs);
 
         /**
          * Returns the digit in the p^k place value

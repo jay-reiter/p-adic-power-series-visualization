@@ -67,7 +67,7 @@ void math_test() {
   p_adic<7> b = p_adic<7>({4,3,2});
   p_adic<7> c = p_adic<7>({0,0,0,0,0,4,3});
   p_adic<7> d = p_adic<7>({0,0,2,6,6,6,6,6});
-  p_adic<7> e = p_adic<7>({0,0,0,0,0,0,0});
+  p_adic<7> e = p_adic<7>({2});
   std::cout << "Here are the numbers:\n" << a << "\n" << b << "\n" << c << "\n" << d << "\n" << e << std::endl;
   std::cout << "a * b = " << a * b << std::endl;
   std::cout << "ord(a,b,c,d)=" << a.ord() << ", " << b.ord() << ", " << c.ord() << ", " << d.ord() << ", " << e.ord() << std::endl;
@@ -78,4 +78,7 @@ void math_test() {
   std::cout << "q = " << q << " ord(q) = " << q.ord() << " norm(q) = " << q.norm() <<  std::endl;
   std::cout << "r = " << r << std::endl;
   std::cout << "r * q = " << r*q << std::endl;
+
+  std::cout << a << " - " << " q " << " = " << a-q << std::endl;
+  std::cout << 2 << "^-1 = " << a.inv(10) << std::endl;
 }
