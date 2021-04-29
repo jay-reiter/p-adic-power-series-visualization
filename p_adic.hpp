@@ -159,3 +159,13 @@ std::ostream& operator<<(std::ostream& out, const p_adic<p>& num) {
     
     return out;
 }
+
+
+
+
+
+
+
+
+
+
