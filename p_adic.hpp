@@ -1,17 +1,25 @@
-
 template <unsigned int p>
 p_adic<p>::p_adic() {
     this->x = std::vector<unsigned int>({});
+    this->m = 0;
 }
 
 template <unsigned int p>
 p_adic<p>::p_adic(std::vector<unsigned int> x) {
     this->x = x;
+    this->m = 0;
+}
+
+template <unsigned int p>
+p_adic<p>::p_adic(std::vector<unsigned int> x, unsigned m) {
+    this->x = x;
+    this->m = m;
 }
 
 template <unsigned int p>
 p_adic<p>::p_adic(const p_adic<p>& other) {
     this->x = other.x;
+    this->m = other.m;
 }
 
 template <unsigned int p>
@@ -20,8 +28,8 @@ unsigned int p_adic<p>::size() const {
 }
 
 template <unsigned int p>
-unsigned int p_adic<p>::ord() const {
-    unsigned int ord = 0;
+int p_adic<p>::ord() const {
+    int ord = -this->m;
     auto itr = this->x.begin();
     while (itr != this->x.end()) {
         if (*itr != 0) return ord;
@@ -64,6 +72,15 @@ p_adic<p> p_adic<p>::operator+(const p_adic<p>& other) const {
         if (carry_over) { sum.x.push_back(1); }
     }
 
+    sum.m = std::max(this->m, other.m);
+    // if we happen to get a zero in the last digit, we should trim that off so boost performance
+    if (sum.x[0] == 0) {
+        // erase first entry in vec
+        sum.x.erase(sum.x.begin());
+        // decrement number of decimal places
+        sum.m--;
+    }
+
     return sum;
 }
 
@@ -104,14 +121,12 @@ p_adic<p> p_adic<p>::single_digit_multiply(const unsigned int a, const p_adic<p>
 
 template <unsigned int p>
 p_adic<p> p_adic<p>::operator*(const p_adic<p>& b) const {
-    
-    std::size_t b_len = b.size();
 
     // initialize sum to 0
     p_adic<p> sum = p_adic({0});
 
     // multiply a by each digit of b, then add p^i that to the sum
-    for (unsigned int i = 0; i < b_len; i++) {
+    for (unsigned int i = 0; i < this->size(); i++) {
         p_adic<p> term = single_digit_multiply((*this)[i], b);
 
         // multiply term by p^i
@@ -121,6 +136,9 @@ p_adic<p> p_adic<p>::operator*(const p_adic<p>& b) const {
 
         sum += term;
     }
+
+    // adjust number of decimal places
+    sum.m = this->m + b.m;
     return sum;
 }
 
@@ -152,7 +170,19 @@ std::ostream& operator<<(std::ostream& out, const p_adic<p>& num) {
     out << "...00";
     
     unsigned i = num.size();
+
+    // if this number looks like 0.000002193 then print out some leading zeros
+    if (num.m > num.size()) {
+        out << "0.";
+        for (unsigned j = 0; j < num.m - num.size(); j++) {
+            out << "0";
+        }
+    }
+
+    // otherwise just print the number as usual
     do {
+        if (i == num.m) out << ".";
+
         i--;
         out << num[i];
     } while (i > 0);
@@ -160,17 +190,6 @@ std::ostream& operator<<(std::ostream& out, const p_adic<p>& num) {
     return out;
 }
 
-<<<<<<< HEAD
-
-
-
-
-
-
-
-
-
-=======
 /**
  * evaluates the power series given by $\sum_{n\geq0} a_n x^n/n!
  * a_n is a function pointer used to determine the coefficients
@@ -178,10 +197,26 @@ std::ostream& operator<<(std::ostream& out, const p_adic<p>& num) {
  * estimates up to some element of p^k Z_p
  */
 template <unsigned int p>
-double power_series(p_adic<p> x, unsigned k, double a(unsigned)) {
+p_adic<p> power_series(p_adic<p> x, unsigned k, p_adic<p> a(unsigned)) {
     // first figure out how many terms we will need to compute to estimate this up to coset
-    
+    /**
+     * if we want to be accurate up to a term a_n x^n in p^kZ_p, we must have
+     * ord(a_nx^n)= ord(a_n) - ord(x^n) >= k
+     * 
+     * in the special case where a_n = 1/n!, we have ord(x^n/n!) = ord(x^n) - n + s(n)
+     * where s(n) denotes the digit sum of the p-adic integer n
+     */
+
+    // initialize sum to 0
+    p_adic<p> D = p_adic<p>({0});
+    p_adic<p> d;
+
+    unsigned n = 0;
+    do {
+        d = a(n) * x.pow(n);
+        D += d;
+        n++;
+    } while (d.ord() >= k);
 
     return 0;
 }
->>>>>>> 36824ce92aceae4f129a619abef6c66395b724f9

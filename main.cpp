@@ -2,8 +2,10 @@
 #include <stdlib.h>
 
 #include "dragon_fractal.h"
-#include "p-adic_draw.h"
+
 #include "p_adic.h"
+#include "p-adic_draw.h"
+
 
 #include "png_utils/PNG.h"
 
@@ -70,4 +72,10 @@ void math_test() {
   std::cout << "a * b = " << a * b << std::endl;
   std::cout << "ord(a,b,c,d)=" << a.ord() << ", " << b.ord() << ", " << c.ord() << ", " << d.ord() << ", " << e.ord() << std::endl;
   std::cout << "norm(a,b,c,d)=" << a.norm() << ", " << b.norm() << ", " << c.norm() << ", " << d.norm() << ", " << e.norm() << std::endl;
+
+  p_adic<7> q = p_adic<7>({1},0);
+  p_adic<7> r = p_adic<7>({2,3},1);
+  std::cout << "q = " << q << " ord(q) = " << q.ord() << " norm(q) = " << q.norm() <<  std::endl;
+  std::cout << "r = " << r << std::endl;
+  std::cout << "r * q = " << r*q << std::endl;
 }

@@ -1,31 +1,29 @@
 #Name .exe file!
 EXENAME = image
 #List all the .o files that get created (one for each .cpp file)
-OBJS = main.o PNG.o HSLAPixel.o lodepng.o dragon_fractal.o p_adic.o p-adic_draw.o
+OBJS = main.o PNG.o HSLAPixel.o lodepng.o dragon_fractal.o p-adic_draw.o
 
 CXX = clang++
 CXXFLAGS = $(png_utils) -std=c++1y -stdlib=libc++ -c -g -O0 -Wall -Wextra -pedantic -lpthread
 LD = clang++
 LDFLAGS = -std=c++1y -stdlib=libc++ -lc++abi -lm -lpthread
 
+DEPFILE_FLAGS = -MMD -MP
 
 all : $(EXENAME)
 
 $(EXENAME) : output_msg $(OBJS)
-	$(LD) $(OBJS) $(LDFLAGS) -o $(EXENAME)
+	$(LD) $(OBJS) $(LDFLAGS) $(DEPFILE_FLAGS) -o $(EXENAME)
 
 # main.o lists itself and all .h files to be compiled
-main.o : main.cpp dragon_fractal.h png_utils/HSLAPixel.h png_utils/PNG.h png_utils/RGB_HSL.h p_adic.h p-adic_draw.h p_adic.hpp
+main.o : main.cpp dragon_fractal.h png_utils/HSLAPixel.h png_utils/PNG.h png_utils/RGB_HSL.h p-adic_draw.h p_adic.hpp p_adic.h
 	$(CXX) $(CXXFLAGS) main.cpp
 
 # Each .o file here lists the relevant .cpp and .h files
 dragon_fractal.o : dragon_fractal.cpp dragon_fractal.h
 	$(CXX) $(CXXFLAGS) dragon_fractal.cpp
 
-p_adic.o : p_adic.hpp p_adic.h
-	$(CXX) $(CXXFLAGS) p_adic.h
-
-p-adic_draw.o : p-adic_draw.cpp p-adic_draw.h p_adic.h
+p-adic_draw.o : p-adic_draw.cpp p-adic_draw.h p_adic.hpp p_adic.h
 	$(CXX) $(CXXFLAGS) p-adic_draw.cpp
 
 # For files within another directory, put the file path. Nothing can be above the directory with Makefile.
