@@ -8,7 +8,7 @@
 #include <cmath>
 
 // the number of digits used to approximate infinitely repeating p-adic numbers
-#define DIGIT_ACCURACY 20
+#define DIGIT_ACCURACY 50
 
 template <unsigned int p> class p_adic;
 
@@ -62,7 +62,7 @@ class p_adic {
 
         /**
          * creates a p-adic number specified by given array and with m "decimal" places
-         * Note that passing {2,3,4,5}, 2 will return the p-adic integer ...0054.32
+         * Note that passing ({2,3,4,5}, 2) will return the p-adic integer ...0054.32
          */
         p_adic(std::vector<unsigned int> x, unsigned m);
         // cpy ctor
@@ -81,13 +81,15 @@ class p_adic {
         p_adic pow(unsigned int b) const;
 
         // computes the multiplicative inverse of a p-adic integer, up to k digits of accuracy
-        p_adic<p> inv(unsigned k) const;
+        p_adic inv(unsigned k) const;
+        // alternatively, just compute up to default DIGIT ACCURACY
+        p_adic inv(void) const;
 
         p_adic operator+(const p_adic<p>& other) const;
         p_adic& operator+=(const p_adic<p>& rhs);
         p_adic operator*(const p_adic<p>& other) const;
         p_adic& operator*=(const p_adic<p>& rhs);
-        p_adic<p> operator-() const;
+        p_adic operator-() const;
         p_adic operator-(const p_adic<p>& other) const;
         p_adic& operator-=(const p_adic<p>& rhs);
 

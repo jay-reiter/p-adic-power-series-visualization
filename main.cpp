@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 
 void math_test() {
   // p_adic<7> zero = p_adic<7>();
-  p_adic<7> a = p_adic<7>({1,2,1});
+  p_adic<7> a = p_adic<7>({2,2,1});
   p_adic<7> b = p_adic<7>({4,3,2});
   p_adic<7> c = p_adic<7>({0,0,0,0,0,4,3});
   p_adic<7> d = p_adic<7>({0,0,2,6,6,6,6,6});
@@ -79,6 +79,7 @@ void math_test() {
   std::cout << "r = " << r << std::endl;
   std::cout << "r * q = " << r*q << std::endl;
 
-  std::cout << a << " - " << " q " << " = " << a-q << std::endl;
-  std::cout << 2 << "^-1 = " << a.inv(10) << std::endl;
+  std::cout << b << " - " << " q " << " = " << b-q << std::endl;
+  std::cout << b << "^-1 = " << b.inv() << std::endl;
+  std::cout << "b*b^-1=" << b * b.inv() << std::endl;
 }
