@@ -1,6 +1,12 @@
 # p-adic-visualization
-Utility for generating visualizations of p-adic integer cosets. Will eventually add functionality for viewing the transformations of Z_p under functions like the exponential exp.
+Utility for generating visualizations of analytic functions on the p-adic integers Z_p.
 
-Best visualization so far is the 7^7Z_7 cosets SWIRL. You may have to download to see it since it is very large.
+Use ./image in terminal to get started.
 
-Also check out "7-adic 7^9Z_7 cosets.png" and "dragon.png"!
+Currently plots Z_p as a tree with specified number of "generations". Each branch of the tree represents an
+additive coset, j+p^kZ_p. Colors are used to indicate the value of j.
+
+The utility lets you define a power series by its coefficients, then plots values up to desired coset accuracy.
+
+Also includes templated class implementation of the p-adic numbers. Operator overloads for +, -, * and more. Can 
+compute p-adic inverses up to desired number of digits, as well as p-adic order and norms.
