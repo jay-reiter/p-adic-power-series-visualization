@@ -8,12 +8,18 @@
 #include <cmath>
 
 // the number of digits used to approximate infinitely repeating p-adic numbers
-#define DIGIT_ACCURACY 50
+#define DIGIT_ACCURACY 20
 
 template <unsigned int p> class p_adic;
 
 template <unsigned int p>
 p_adic<p> power_series(p_adic<p> x, unsigned k, p_adic<p> a(unsigned));
+
+template <unsigned int p>
+p_adic<p> factorial_inv(unsigned n);
+
+template <unsigned int p>
+p_adic<p> exp(p_adic<p> x, unsigned k);
 
 template <unsigned int p>
 std::ostream& operator<<(std::ostream& out, const p_adic<p>& num);
@@ -51,7 +57,13 @@ class p_adic {
          * multiplies a p_adic number by a single digit
          * must have 0 <= a <= p
          */
-        p_adic single_digit_multiply(const unsigned int a, const p_adic<p>& b) const;
+        static p_adic single_digit_multiply(const unsigned int a, const p_adic<p>& b);
+
+        /**
+         * if number has m>0, removes trailing zeros and adjusts m accordingly
+         * Ex: converts ...00213.3400, m = 4 to ...00213.34, m = 2
+         */
+        p_adic trim_zeros();
 
     public:
         /**
@@ -70,6 +82,8 @@ class p_adic {
         // dtor
         ~p_adic() {}
 
+        // accessor for internal vector that stores digits
+        std::vector<unsigned> get_tuple();
         
         // get the p-adic order; index of first non-zero digit, reading from right to left
         int ord() const;
@@ -99,10 +113,26 @@ class p_adic {
         unsigned int operator[](std::size_t idx) const;
         unsigned int& operator[](std::size_t k);
 
-        // friend template functions
         friend std::ostream& operator<< <> (std::ostream& out, const p_adic<p>& num);
-        friend p_adic<p> power_series <> (p_adic<p> x, unsigned k, p_adic<p> a(unsigned));
+        
+        /**
+         * evaluates the power series given by $\sum_{n\geq0} a_n x^n/n!
+         * a_n is a function pointer used to determine the coefficients
+         * 
+         * estimates up to some element of p^k Z_p
+         */
+        friend p_adic power_series <> (p_adic x, unsigned k, p_adic a(unsigned));
+
+        /**
+         * computes the p-adic number (n!)^-1
+         * useful for power series
+         */
+        friend p_adic factorial_inv <> (unsigned n);
+
+        friend p_adic exp <> (p_adic x, unsigned k);
 };
+
+
 
 // since this is a templated class
 #include "p_adic.hpp"

@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     unsigned int children = (unsigned int) atoi(argv[4]);
 
     // TODO: make changing the enum input here easier
-    png_utils::PNG png = p_adic_draw(width, width, p, children, swirl);
+    png_utils::PNG png = plot_power_series(width, width, p, children, swirl);
     
     // if there is a user-specified target file
     if (argc == 6) {
@@ -64,22 +64,31 @@ int main(int argc, char *argv[]) {
 void math_test() {
   // p_adic<7> zero = p_adic<7>();
   p_adic<7> a = p_adic<7>({2,2,1});
-  p_adic<7> b = p_adic<7>({4,3,2});
+  p_adic<7> b = p_adic<7>({0,3,2});
   p_adic<7> c = p_adic<7>({0,0,0,0,0,4,3});
   p_adic<7> d = p_adic<7>({0,0,2,6,6,6,6,6});
   p_adic<7> e = p_adic<7>({2});
-  std::cout << "Here are the numbers:\n" << a << "\n" << b << "\n" << c << "\n" << d << "\n" << e << std::endl;
-  std::cout << "a * b = " << a * b << std::endl;
-  std::cout << "ord(a,b,c,d)=" << a.ord() << ", " << b.ord() << ", " << c.ord() << ", " << d.ord() << ", " << e.ord() << std::endl;
-  std::cout << "norm(a,b,c,d)=" << a.norm() << ", " << b.norm() << ", " << c.norm() << ", " << d.norm() << ", " << e.norm() << std::endl;
+  // std::cout << "Here are the numbers:\n" << a << "\n" << b << "\n" << c << "\n" << d << "\n" << e << std::endl;
+  // std::cout << "a * b = " << a * b << std::endl;
+  // std::cout << "ord(a,b,c,d)=" << a.ord() << ", " << b.ord() << ", " << c.ord() << ", " << d.ord() << ", " << e.ord() << std::endl;
+  // std::cout << "norm(a,b,c,d)=" << a.norm() << ", " << b.norm() << ", " << c.norm() << ", " << d.norm() << ", " << e.norm() << std::endl;
 
   p_adic<7> q = p_adic<7>({1},0);
-  p_adic<7> r = p_adic<7>({2,3},1);
-  std::cout << "q = " << q << " ord(q) = " << q.ord() << " norm(q) = " << q.norm() <<  std::endl;
-  std::cout << "r = " << r << std::endl;
-  std::cout << "r * q = " << r*q << std::endl;
+  // p_adic<7> r = p_adic<7>({2,3},1);
+  // std::cout << "q = " << q << " ord(q) = " << q.ord() << " norm(q) = " << q.norm() <<  std::endl;
+  // std::cout << "r = " << r << std::endl;
+  // std::cout << "r * q = " << r*q << std::endl;
 
-  std::cout << b << " - " << " q " << " = " << b-q << std::endl;
-  std::cout << b << "^-1 = " << b.inv() << std::endl;
-  std::cout << "b*b^-1=" << b * b.inv() << std::endl;
+  // std::cout << e << " - " << " q " << " = " << b-q << std::endl;
+  // p_adic<7> e_inv = e.inv();
+  // std::cout << e << "^-1 = " << e_inv << std::endl;
+  // std::cout << "e*e^-1=" << e * e_inv << std::endl;
+
+  // p_adic<7> num = p_adic<7>({1});
+  // for (int i = 0; i < 100; i++) {
+  //   std::cout << num << "^-1 = " << num.inv() << "\n" << num << " * " << num.inv() << " = " << num * num.inv() << std::endl;
+  //   num += q;
+  // }
+
+  std::cout << "\n\nexp(b)=" << exp(b,5) << std::endl;
 }

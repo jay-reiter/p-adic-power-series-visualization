@@ -18,6 +18,7 @@ static const int WIDTH_SCALE = 8;
 
 static const double PI = 3.1415926535897;
 static double r;
+static double start_d;
 
 static Node* origin = NULL;
 
@@ -208,7 +209,6 @@ png_utils::PNG p_adic_draw(int width, int height, const int p, int children, ima
     // initialize constants
     style = s;
     // initial length of branch components; will make tree go all the way to the edge of the png
-    double start_d;
     int center[2] = {width / 2, 0};
     switch (style) {
 
@@ -284,19 +284,20 @@ png_utils::PNG p_adic_draw(int width, int height, const int p, int children, ima
         pthread_join(threads[c], NULL);
     }
 
-    int tuple[6] = {6,6,6,6,6,6};
-    trace_sequence(&image, p, tuple, 5, start_d, 100);
-
     return image;
 }
-
-
 
 /**
  * given an tuple in {0,1,2,...,p-1} of length len, this traces the corresponding branch in the image in the given hue
  */
-void trace_sequence(png_utils::PNG* image, const int p, int* tuple, int len, double start_d, int hue) {
+void trace_sequence(png_utils::PNG* image, const int p, std::vector<unsigned> tuple, int len, double start_d, int hue) {
     Node node = *origin;
+
+    // because of the way we plotted this, we swap all the digits, a, of tuple with (p-1)-a.
+    // this is purely for the visual effect on the final plotted image; it has no mathematical relevance
+    for (unsigned i = 0; i <= len; i++) {
+        tuple[i] = (p-1) - tuple[i];
+    }
 
     double new_angle = get_new_angle(3 * PI / 2, tuple[0], p);
     double theta = new_angle;
@@ -321,4 +322,18 @@ void trace_sequence(png_utils::PNG* image, const int p, int* tuple, int len, dou
         i++;
 
     } while (i <= len);
+}
+
+/**
+ * plots a p-adic power series on an image of Z_p
+ */
+png_utils::PNG plot_power_series(int width, int height, const int p, int children, image_style s) {
+    // get the base image to draw on. This also initializes global variable with branch paths
+    png_utils::PNG image = p_adic_draw(width, height, p, children, s);
+
+    p_adic<7> num = p_adic<7>({0,0,0,0,0,1});
+    trace_sequence(&image, p, num.get_tuple(), children, start_d, 100);
+    trace_sequence(&image, p, exp(num, 10).get_tuple(), children, start_d, 300);
+
+    return image;
 }

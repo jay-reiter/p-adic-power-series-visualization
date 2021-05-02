@@ -23,6 +23,11 @@ p_adic<p>::p_adic(const p_adic<p>& other) {
 }
 
 template <unsigned int p>
+std::vector<unsigned> p_adic<p>::get_tuple() {
+    return this->x;
+}
+
+template <unsigned int p>
 unsigned int p_adic<p>::size() const {
     return this->x.size();
 }
@@ -72,21 +77,23 @@ p_adic<p> p_adic<p>::inv(unsigned k) const {
     remainder.x[0] = 1;
 
     for (unsigned i = 0; i < k; i++) {
-        // check if this digit of remainder is nonzero; if it is zero, add a 0 to quotient and continue
+        // std::cout << "\nLoop iteration: " << i << "\nRemainder = " << remainder << "\nQuotient = " << quotient << std::endl;
+
         w = remainder.x[0];
         
-        quotient.x[i] = (w * x) % p;        
+        quotient.x[i] = (w * x) % p;
 
-        // std::cout << "\n(w * x) % p * a_bar=" << single_digit_multiply((w * x) % p, a_bar) << std::endl;
+        // std::cout << "Adding " << quotient.x[i] << " to quotient\nSubtracting " << single_digit_multiply(quotient.x[i], a_bar) << " from remainder" << std::endl;
+
         remainder -= single_digit_multiply(quotient.x[i], a_bar);
-        // std::cout << "remainder " << i << ": " << remainder << "\nadding digit to quotient: " << (w*x)%p << std::endl;
 
-        // we have now zeroed out the right-most digit, so move remainder down
+        // we have now zeroed out the right-most digit, so move remainder down by factor of p
         remainder.x.erase(remainder.x.begin());
 
         // TODO: recognize repeat remainders?
     }
 
+    quotient.m = c;
     return quotient;
 }
 
@@ -136,15 +143,17 @@ p_adic<p>& p_adic<p>::operator+=(const p_adic<p>& rhs) {
 }
 
 template <unsigned int p>
-p_adic<p> p_adic<p>::single_digit_multiply(const unsigned int a, const p_adic<p>& b) const {
+p_adic<p> p_adic<p>::single_digit_multiply(const unsigned int a, const p_adic<p>& b) {
     // if a == p, we just add a 0 on the end
     if (a == p) {
         p_adic<p> ret = b;
         ret.x.insert(ret.x.begin(), 0);
         return ret;
     }
-    // otherwise, make sure a is in {0,1,2,...,p-1}
-    assert(0 <= a && a < p);
+    if (a == 0) { return p_adic<p>({0}); }
+    
+    // otherwise, make sure a is in {1,2,...,p-1}
+    assert(0 < a && a < p);
 
     unsigned int carry_over = 0;
     unsigned int remainder = 0;
@@ -180,10 +189,12 @@ p_adic<p> p_adic<p>::operator*(const p_adic<p>& b) const {
         }
 
         sum += term;
+        // std::cout << "i=" << i << "Sum = " << sum << std::endl;
     }
 
     // adjust number of decimal places
     sum.m = this->m + b.m;
+    sum.trim_zeros();
     return sum;
 }
 
@@ -197,7 +208,9 @@ template <unsigned int p>
 p_adic<p> p_adic<p>::operator-() const {
     // construct p-adic -1 to the same number of digits of this
     p_adic<p> negative = p_adic(std::vector<unsigned>(DIGIT_ACCURACY, p - 1), 0);
-    return negative * (*this);
+
+    // std::cout << "negative " << *this << " = " << (*this) * negative << std::endl;
+    return (*this) * negative;
 }
 
 template <unsigned int p>
@@ -207,6 +220,9 @@ p_adic<p> p_adic<p>::operator-(const p_adic<p>& other) const {
 
 template <unsigned int p>
 p_adic<p>& p_adic<p>::operator-=(const p_adic<p>& rhs) {
+
+    // std::cout << "Adding " << -rhs << " to remainder" << std::endl;
+
     *this = *this - rhs;
     return *this;
 }
@@ -253,12 +269,6 @@ std::ostream& operator<<(std::ostream& out, const p_adic<p>& num) {
     return out;
 }
 
-/**
- * evaluates the power series given by $\sum_{n\geq0} a_n x^n/n!
- * a_n is a function pointer used to determine the coefficients
- * 
- * estimates up to some element of p^k Z_p
- */
 template <unsigned int p>
 p_adic<p> power_series(p_adic<p> x, unsigned k, p_adic<p> a(unsigned)) {
     // first figure out how many terms we will need to compute to estimate this up to coset
@@ -279,7 +289,45 @@ p_adic<p> power_series(p_adic<p> x, unsigned k, p_adic<p> a(unsigned)) {
         d = a(n) * x.pow(n);
         D += d;
         n++;
-    } while (d.ord() >= k);
+    } while (d.ord() <= k);
 
-    return 0;
+    // for (; n < 40; n++) {
+    //     d = a(n) * x.pow(n);
+    //     D += d;
+    // }
+
+    return D;
+}
+
+template <unsigned int p>
+p_adic<p> factorial_inv(unsigned n) {
+    // first get n!
+    p_adic<p> n_fact = p_adic<p>({1});
+    p_adic<p> one = p_adic<p>({1});
+    p_adic<p> multiplier = p_adic<p>({2});
+
+    for (unsigned k = 2; k <= n; k++) {
+        n_fact *= multiplier;
+        multiplier += one;
+    }
+
+    // std::cout << "\n" << n << "! = " << n_fact << "\n" << n << "!^-1 = " << n_fact.inv() << "\n" << n_fact << " * " << n_fact.inv() << " = " << n_fact * n_fact.inv() << std::endl;
+
+    // return the inverse
+    return n_fact.inv();
+}
+
+template <unsigned int p>
+p_adic<p> exp(p_adic<p> x, unsigned k) {
+    return power_series(x, k, factorial_inv);
+}
+
+template <unsigned int p>
+p_adic<p> p_adic<p>::trim_zeros() {
+    while (this->x[0] == 0 && this->m > 0) {
+        this->x.erase(this->x.begin());
+        this->m--;
+    }
+
+    return *this;
 }
