@@ -31,4 +31,5 @@ void trace_sequence(png_utils::PNG* image, const int p, std::vector<unsigned> tu
 void* thread_draw_branch_wrapper(void* job);
 void draw_branch(png_utils::PNG* image, int x, int y, double d, double theta, int hue, int children, const int p, Node* node, color_type ct);
 png_utils::PNG plot_power_series(int width, int height, const int p, int children, image_style s);
+void* thread_process_image(void* in);
 

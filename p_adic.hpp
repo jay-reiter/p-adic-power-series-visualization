@@ -113,6 +113,7 @@ p_adic<p> p_adic<p>::operator+(const p_adic<p>& other) const {
     unsigned int remainder = 0;
     unsigned int s;
 
+    // regular place-value addition
     for (unsigned int i = 0; i < std::min(a_len, b_len); i++) {
         s = (*this)[i] + other[i] + carry_over;
         remainder = s % p;
@@ -131,7 +132,7 @@ p_adic<p> p_adic<p>::operator+(const p_adic<p>& other) const {
     }
 
     sum.m = std::max(this->m, other.m);
-    // if we happen to get a zero in the last digit, we should trim that off so boost performance
+    // TODO: if we happen to get a zero in the last digit, we should trim that off so boost performance
 
     return sum;
 }
@@ -189,7 +190,6 @@ p_adic<p> p_adic<p>::operator*(const p_adic<p>& b) const {
         }
 
         sum += term;
-        // std::cout << "i=" << i << "Sum = " << sum << std::endl;
     }
 
     // adjust number of decimal places
@@ -209,7 +209,6 @@ p_adic<p> p_adic<p>::operator-() const {
     // construct p-adic -1 to the same number of digits of this
     p_adic<p> negative = p_adic(std::vector<unsigned>(DIGIT_ACCURACY, p - 1), 0);
 
-    // std::cout << "negative " << *this << " = " << (*this) * negative << std::endl;
     return (*this) * negative;
 }
 
@@ -220,9 +219,6 @@ p_adic<p> p_adic<p>::operator-(const p_adic<p>& other) const {
 
 template <unsigned int p>
 p_adic<p>& p_adic<p>::operator-=(const p_adic<p>& rhs) {
-
-    // std::cout << "Adding " << -rhs << " to remainder" << std::endl;
-
     *this = *this - rhs;
     return *this;
 }
@@ -310,9 +306,6 @@ p_adic<p> factorial_inv(unsigned n) {
         n_fact *= multiplier;
         multiplier += one;
     }
-
-    // std::cout << "\n" << n << "! = " << n_fact << "\n" << n << "!^-1 = " << n_fact.inv() << "\n" << n_fact << " * " << n_fact.inv() << " = " << n_fact * n_fact.inv() << std::endl;
-
     // return the inverse
     return n_fact.inv();
 }
@@ -330,4 +323,27 @@ p_adic<p> p_adic<p>::trim_zeros() {
     }
 
     return *this;
+}
+
+template <unsigned int p>
+p_adic<p> p_adic<p>::increment_back() {
+    for (int i = this->size() - 1; i >= 0; i--) {
+        this->x[i]++;
+        if (this->x[i] == p) {
+            this->x[i] = 0;
+        }
+        else break;
+    }
+
+    return *this;
+}
+
+template <unsigned int p>
+std::string p_adic<p>::to_string() {
+    std::string out = "";
+    for (int i = this->size() - 1; i >= 0; i--) {
+        // std::cout << "i=" << i << std::endl;
+        out += std::to_string(this->x[i]);
+    }
+    return out;
 }

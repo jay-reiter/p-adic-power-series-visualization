@@ -324,16 +324,90 @@ void trace_sequence(png_utils::PNG* image, const int p, std::vector<unsigned> tu
     } while (i <= len);
 }
 
+typedef struct thread_image_ {
+    unsigned len; // number of images to produce
+    unsigned start_idx; // start index of images (for file names)
+    p_adic<7> start_num; // starting p_adic number
+    png_utils::PNG* image; // pointer to base image (copied each time)
+    unsigned children; // number of children in image
+    unsigned p;
+} thread_image_t;
+
 /**
  * plots a p-adic power series on an image of Z_p
  */
 png_utils::PNG plot_power_series(int width, int height, const int p, int children, image_style s) {
+
     // get the base image to draw on. This also initializes global variable with branch paths
     png_utils::PNG image = p_adic_draw(width, height, p, children, s);
 
-    p_adic<7> num = p_adic<7>({0,0,0,0,0,1});
-    trace_sequence(&image, p, num.get_tuple(), children, start_d, 100);
-    trace_sequence(&image, p, exp(num, 10).get_tuple(), children, start_d, 300);
+    unsigned len = 343; // 7^3
+    unsigned start_idx = 0;
+    p_adic<7> num = p_adic<7>(std::vector<unsigned>(children, 0U));
 
-    return image;
+    //thread ids
+    pthread_t threads[p];
+    thread_image_t image_info[p];
+
+    for (unsigned i = 0; i < p; i++) {
+
+        image_info[i].len = len;
+        image_info[i].start_idx = start_idx;
+        image_info[i].start_num = num;
+        image_info[i].image = &image;
+        image_info[i].children = children;
+        image_info[i].p = p;
+
+        // send thread off to do its thing
+        pthread_create(threads + i, NULL, thread_process_image, (void*) (image_info + i));
+
+        for (int j = 0; j < len; j++) {
+            num.increment_back();
+        }
+        start_idx += len;
+    }
+    
+    // join with all the threads
+    for (unsigned i = 0; i < p; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    // return image;
+    return png_utils::PNG();
+}
+
+/**
+ * thread landing function to process a range of images
+ * writes them to files
+ */
+void* thread_process_image(void* in) {
+    thread_image_t* info = (thread_image_t*) in;
+    p_adic<7> num = info->start_num;
+    png_utils::PNG* image = info->image;
+    unsigned children = info->children;
+    unsigned p = info->p;
+
+    unsigned pics = info->start_idx;
+
+    while ((num.norm() < std::pow(p, 1/(1.-p))) && pics < info->start_idx + info->len) {
+        std::cout << num << std::endl;
+
+        // make a copy of the image
+        png_utils::PNG img_cpy = png_utils::PNG(*image);
+        // trace paths on image
+        trace_sequence(&img_cpy, p, num.get_tuple(), children, start_d, 100);
+        trace_sequence(&img_cpy, p, exp(num, 10).get_tuple(), children, start_d, 300);
+
+        // construct file path
+        std::string path = "pngs/idx_" + std::to_string(pics) + "_num_" + num.to_string() + ".png";
+
+        // write the image to a file
+        std::cout << "writing to path: " << path << std::endl << std::endl;
+        img_cpy.writeToFile(path);
+
+        num.increment_back();
+        pics++;
+    }
+
+    pthread_exit(NULL);
 }

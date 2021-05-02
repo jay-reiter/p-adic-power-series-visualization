@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 #include <iostream>
 #include <algorithm>
 #include <assert.h>
@@ -43,11 +44,6 @@ class p_adic {
         unsigned m;
 
         /**
-         * returns p_adic object with no digits
-         */
-        p_adic();
-
-        /**
          * gets the index (in the vector) of the highest non-zero digit
          * only for coding reasons; no intentional mathematical use
          */
@@ -73,6 +69,11 @@ class p_adic {
         p_adic(std::vector<unsigned int> x);
 
         /**
+         * returns p_adic object with no digits
+         */
+        p_adic();
+
+        /**
          * creates a p-adic number specified by given array and with m "decimal" places
          * Note that passing ({2,3,4,5}, 2) will return the p-adic integer ...0054.32
          */
@@ -84,6 +85,15 @@ class p_adic {
 
         // accessor for internal vector that stores digits
         std::vector<unsigned> get_tuple();
+        
+        // increments the right-most entry of the array.
+        // do not use for normal incrementing; use += for that
+        p_adic increment_back();
+
+
+        // converts p_adic integer to a string
+        // TODO: support general p_adic numbers
+        std::string to_string();
         
         // get the p-adic order; index of first non-zero digit, reading from right to left
         int ord() const;
@@ -131,8 +141,6 @@ class p_adic {
 
         friend p_adic exp <> (p_adic x, unsigned k);
 };
-
-
 
 // since this is a templated class
 #include "p_adic.hpp"
