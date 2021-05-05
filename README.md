@@ -25,7 +25,7 @@ The green line represents x and the pink COS(x) and the blue SIN(x) in sin_cos__
 Create a function "p_adic<p> a(unsigned)" to define coefficients of a power series.
 Use this function with "power_series(...)" in "thread_process_image(...)" in p-adic_draw.cpp.
 
-From the command line, run: ./image p_adic <width> <p> <children> [target_file_name]
+From the command line, run: ./image p_adic width p children target_file_name
 
 (I reccomend ./image p_adic 5000 7 5)
   
