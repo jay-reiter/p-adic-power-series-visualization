@@ -1,4 +1,4 @@
-# p-adic-visualization
+# p-adic-power-series-visualization
 
 Utility for generating visualizations of analytic functions on the p-adic integers Z_p.
 
