@@ -1,4 +1,5 @@
 # p-adic-visualization
+
 Utility for generating visualizations of analytic functions on the p-adic integers Z_p.
 
 Use ./image in terminal to get started.
@@ -11,15 +12,13 @@ The utility lets you define a power series by its coefficients, then plots value
 Also includes templated class implementation of the p-adic numbers. Operator overloads for +, -, * and more. Can 
 compute p-adic inverses up to desired number of digits, as well as p-adic order and norms.
 
-=============================================
-PLOTS IN THIS REPO:
+# PLOTS IN THIS REPO:
 
 Check out the plots of p-adic EXP and SIN and COS in the .gif files.
 The green line represents x and the pink EXP(x) in exp__low_res.gif
 The green line represents x and the pink COS(x) and the blue SIN(x) in sin_cos__low_res.gif
 
-=============================================
-EXAMPLE USAGE:
+# EXAMPLE USAGE:
 
 Create a function "p_adic<p> a(unsigned)" to define coefficients of a power series
 Use this function with "power_series(...)" in "thread_process_image(...)" in p-adic_draw.cpp
