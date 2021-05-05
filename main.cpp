@@ -90,5 +90,5 @@ void math_test() {
   //   num += q;
   // }
 
-  std::cout << "\n\nexp(b)=" << exp(b,5) << std::endl;
+  std::cout << "\n\nsin(b)=" << sin(b,5) << std::endl;
 }

@@ -36,12 +36,12 @@ template <unsigned int p>
 int p_adic<p>::ord() const {
     int ord = -this->m;
     auto itr = this->x.begin();
-    while (itr != this->x.end()) {
+    while (itr != this->x.end() && ord < ORD_MAX) {
         if (*itr != 0) return ord;
         ord++;
         itr++;
     }
-    return INFINITY;
+    return ORD_MAX;
 }
 
 template <unsigned int p>
@@ -276,21 +276,34 @@ p_adic<p> power_series(p_adic<p> x, unsigned k, p_adic<p> a(unsigned)) {
      * where s(n) denotes the digit sum of the p-adic integer n
      */
 
+    // aux line to return a_0 if x==0
+    if (x.ord() == ORD_MAX) {
+        return a(0);
+    }
+
     // initialize sum to 0
-    p_adic<p> D = p_adic<p>({0});
+    p_adic<p> D = p_adic<p>(std::vector<unsigned>(DIGIT_ACCURACY, 0));
     p_adic<p> d;
+
+    // p_adic<p> one = p_adic<p>({1});
 
     unsigned n = 0;
     do {
-        d = a(n) * x.pow(n);
-        D += d;
-        n++;
-    } while (d.ord() <= k);
+        do {
+            d = a(n) * x.pow(n);
+            // std::cout << "d=" << d << std::endl;
+            n++;
+        } while (d.ord() == ORD_MAX);
 
-    // for (; n < 40; n++) {
-    //     d = a(n) * x.pow(n);
-    //     D += d;
-    // }
+        
+        // if (d.ord() == ORD_MAX /* d == 0 */) {
+        //     if (n > MAX_ITER) break;
+        //     d += one; // so d will pass the while condition
+        // }
+        
+        D += d;
+
+    } while (d.ord() <= k && n < MAX_ITER);
 
     return D;
 }
@@ -313,6 +326,16 @@ p_adic<p> factorial_inv(unsigned n) {
 template <unsigned int p>
 p_adic<p> exp(p_adic<p> x, unsigned k) {
     return power_series(x, k, factorial_inv);
+}
+
+template <unsigned int p>
+p_adic<p> sin(p_adic<p> x, unsigned k) {
+    return power_series(x, k, sin_coef);
+}
+
+template <unsigned int p>
+p_adic<p> cos(p_adic<p> x, unsigned k) {
+    return power_series(x, k, cos_coef);
 }
 
 template <unsigned int p>
@@ -346,4 +369,22 @@ std::string p_adic<p>::to_string() {
         out += std::to_string(this->x[i]);
     }
     return out;
+}
+
+template <unsigned int p>
+p_adic<p> sin_coef(unsigned n) {
+    if (n % 2 == 0) return p_adic<p>(std::vector<unsigned>(DIGIT_ACCURACY, 0));
+    
+    p_adic<p> ret = factorial_inv<p>(n);
+    if ((n-1)/2 % 2 == 1) { return -ret; }
+    return ret;
+}
+
+template <unsigned int p>
+p_adic<p> cos_coef(unsigned n) {
+    if (n % 2 == 1) return p_adic<p>(std::vector<unsigned>(DIGIT_ACCURACY, 0));
+    
+    p_adic<p> ret = factorial_inv<p>(n);
+    if (n/2 % 2 == 1) { return -ret; }
+    return ret;
 }

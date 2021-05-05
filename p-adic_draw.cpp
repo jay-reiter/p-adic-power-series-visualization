@@ -396,7 +396,9 @@ void* thread_process_image(void* in) {
         png_utils::PNG img_cpy = png_utils::PNG(*image);
         // trace paths on image
         trace_sequence(&img_cpy, p, num.get_tuple(), children, start_d, 100);
-        trace_sequence(&img_cpy, p, exp(num, 10).get_tuple(), children, start_d, 300);
+        // trace_sequence(&img_cpy, p, exp(num, children + 1).get_tuple(), children, start_d, 100);
+        trace_sequence(&img_cpy, p, sin(num, children + 1).get_tuple(), children, start_d, 200);
+        trace_sequence(&img_cpy, p, cos(num, children + 1).get_tuple(), children, start_d, 300);
 
         // construct file path
         std::string path = "pngs/idx_" + std::to_string(pics) + "_num_" + num.to_string() + ".png";

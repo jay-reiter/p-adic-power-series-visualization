@@ -9,7 +9,9 @@
 #include <cmath>
 
 // the number of digits used to approximate infinitely repeating p-adic numbers
-#define DIGIT_ACCURACY 20
+#define DIGIT_ACCURACY (20)
+#define ORD_MAX (1000)
+#define MAX_ITER (100)
 
 template <unsigned int p> class p_adic;
 
@@ -18,9 +20,17 @@ p_adic<p> power_series(p_adic<p> x, unsigned k, p_adic<p> a(unsigned));
 
 template <unsigned int p>
 p_adic<p> factorial_inv(unsigned n);
+template <unsigned int p>
+p_adic<p> sin_coef(unsigned n);
+template <unsigned int p>
+p_adic<p> cos_coef(unsigned n);
 
 template <unsigned int p>
 p_adic<p> exp(p_adic<p> x, unsigned k);
+template <unsigned int p>
+p_adic<p> sin(p_adic<p> x, unsigned k);
+template <unsigned int p>
+p_adic<p> cos(p_adic<p> x, unsigned k);
 
 template <unsigned int p>
 std::ostream& operator<<(std::ostream& out, const p_adic<p>& num);
@@ -138,8 +148,14 @@ class p_adic {
          * useful for power series
          */
         friend p_adic factorial_inv <> (unsigned n);
+        // computes the coefficients of sin
+        friend p_adic sin_coef <> (unsigned n);
+        // computes the coefficients of cos
+        friend p_adic cos_coef <> (unsigned n);
 
         friend p_adic exp <> (p_adic x, unsigned k);
+        friend p_adic sin <> (p_adic x, unsigned k);
+        friend p_adic cos <> (p_adic x, unsigned k);
 };
 
 // since this is a templated class
