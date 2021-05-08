@@ -27,7 +27,7 @@ Use this function with "power_series(...)" in "thread_process_image(...)" in p-a
 
 From the command line, run: ./image p_adic width p children target_file_name
 
-(I reccomend ./image p_adic 5000 7 5)
+(I recommend ./image p_adic 5000 7 5)
   
 This will take a while to generate each frame of the gif (around an hour running 7 threads on my machine, with i5-9400F at 2.90 GHz, 6 cores). When its done, the images are stored in ./pngs/ . My 7^5=2401 images at 5000x5000 each take up as much as a gigabyte. Compile and run ./rename_files.c to prepare file names (this erases their descriptive names).
 
